@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.meomulm.favorite.model.mapper.FavoriteMapper">
+
+    <!-- 찜 목록 조회 -->
+    <select id="selectAllFavorites" resultType="SelectFavorite">
+        SELECT
+            f.*,
+            a.accommodation_name,
+            a.accommodation_address,
+            ai.accommodation_image_url
+        FROM favorite f
+                 FULL OUTER JOIN accommodation a
+                            ON f.accommodation_id = a.accommodation_id
+                 FULL OUTER JOIN accommodation_image ai
+                            ON a.accommodation_id = ai.accommodation_id
+                            AND ai.accommodation_image_id = (
+                                    SELECT accommodation_image_id
+                                    FROM accommodation_image
+                                    WHERE accommodation_id = a.accommodation_id
+                                    ORDER BY accommodation_image_id ASC
+                                    LIMIT 1
+                                    )
+        WHERE f.user_id = #{userId}
+    </select>
+
+
+    <!-- 찜 조회 -->
+    <select  id="selectFavorite" resultType="Integer">
+            SELECT favorite_id
+            FROM favorite
+            WHERE user_id = #{userId}
+              AND accommodation_id = #{accommodationId}
+
+
+    </select>
+
+
+    <!-- 찜 추가 -->
+    <insert id="insertFavorite" parameterType="Favorite" useGeneratedKeys="true" keyProperty="favoriteId" keyColumn="favorite_id">
+        INSERT INTO favorite (user_id, accommodation_id)
+        VALUES (#{userId}, #{accommodationId})
+    </insert>
+
+    <!-- 찜 삭제 -->
+    <delete id="deleteFavorite" parameterType="Favorite">
+        DELETE FROM favorite
+        WHERE user_id = #{userId} AND favorite_id = #{favoriteId}
+    </delete>
+</mapper>

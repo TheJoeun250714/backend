@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.meomulm.reservation.model.mapper.ReservationMapper">
+
+
+<!--    <select id="selectTomorrowCheckInList" resultType="Reservation">-->
+<!--        SELECT-->
+<!--            reservation_id, user_id-->
+<!--        FROM reservation-->
+<!--        WHERE TO_CHAR(check_in_date, 'YYYY-MM-DD') = TO_CHAR(SYSDATE + 1, 'YYYY-MM-DD')-->
+<!--          AND status = 'CONFIRMED'-->
+<!--    </select>-->
+
+<!--    <select id="selectTodayCheckOutList" resultType="Reservation">-->
+<!--        SELECT-->
+<!--            reservation_id, user_id-->
+<!--        FROM reservation-->
+<!--        WHERE TO_CHAR(check_out_date, 'YYYY-MM-DD') = TO_CHAR(SYSDATE, 'YYYY-MM-DD')-->
+<!--          AND status = 'CONFIRMED'-->
+<!--    </select>-->
+
+    <select id="selectReservationWithNames" resultType="ReservationDTO">
+        SELECT
+        r.reservation_id,
+        r.user_id,
+        a.accommodation_name,
+        r.product_id
+        FROM reservations r
+        JOIN product p ON r.product_id = p.product_id
+        JOIN accommodation a ON p.accommodation_id = a.accommodation_id
+        WHERE r.status = 'PAID'
+        <choose>
+            <when test="type == 'CHECK_IN'">
+                AND r.check_in_date = CURRENT_DATE + INTERVAL '1 day'
+            </when>
+            <when test="type == 'CHECK_OUT'">
+                AND r.check_out_date = CURRENT_DATE
+            </when>
+        </choose>
+    </select>
+
+
+    <!-- 예약 조회 (예약Id) -->
+    <select id="selectReservationById">
+        SELECT *
+        FROM reservation
+        WHERE reservation_id= #{reservationId}
+    </select>
+
+    <!--
+         예약 추가
+         ─── 변경 포인트 ───
+         useGeneratedKeys="true"        → INSERT 후 자동 생성된 PK를 DTO 로 변경
+         keyProperty="reservationId"    → Reservation.setReservationId(generatedKey) 호출
+         PostgreSQL 에서는 RETURNING 절이 필요하지만,
+         MyBatis + HikariCP + PostgreSQL JDBC 드라이버가
+         getGeneratedKeys() 를 지원하므로 이것만으로 충분.
+         만약 작동하지 않으면 아래 주석 참고:
+           → <insert id="insertReservation" parameterType="Reservation"
+                      useGeneratedKeys="true" keyProperty="reservationId" keyColumn="reservation_id">
+    -->
+    <insert id="insertReservation" parameterType="Reservation"
+            useGeneratedKeys="true" keyProperty="reservationId" keyColumn="reservation_id">
+        INSERT INTO reservation (user_id, product_id, booker_name, booker_email, booker_phone, check_in_date, check_out_date, guest_count, status, total_price, created_at)
+        VALUES (#{userId}, #{productId}, #{bookerName}, #{bookerEmail}, #{bookerPhone}, #{checkInDate}, #{checkOutDate}, #{guestCount}, 'NOT_PAID', #{totalPrice}, NOW())
+    </insert>
+
+    <!-- 예약 수정 -->
+    <update id="updateReservation">
+        UPDATE reservation
+        SET booker_name = #{bookerName},
+            booker_email = #{bookerEmail},
+            booker_phone = #{bookerPhone}
+        WHERE reservation_id = #{reservationId}
+    </update>
+
+    <!-- 예약 상태 변경 (결제 후) -->
+    <update id="updateStatusToPaid">
+        UPDATE reservation
+        SET status = 'PAID'
+        WHERE reservation_id = #{reservationId}
+    </update>
+
+    <!-- 예약 상태 변경 (이용 후) -->
+    <update id="updateStatusToUsed">
+        UPDATE reservation
+        SET status = 'USED'
+        WHERE reservation_id = #{reservationId}
+    </update>
+
+    <!-- 예약 취소 (상태 변경) -->
+    <update id="putReservation">
+        UPDATE reservation
+        SET status = 'CANCELED'
+        WHERE reservation_id = #{reservationId}
+    </update>
+
+    <!-- 예약 삭제(미결제 종료) -->
+    <delete id="deleteReservation">
+        DELETE FROM reservation
+        WHERE reservation_id = #{reservationId}
+    </delete>
+</mapper>

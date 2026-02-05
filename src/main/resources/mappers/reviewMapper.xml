@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.meomulm.review.model.mapper.ReviewMapper">
+
+    <!-- 숙소 ID로 리뷰 약식 조회 -->
+    <select id="selectReviewSummary" resultType="ReviewSummary">
+        SELECT
+            ROUND(AVG(rating), 1) as averageRating,
+            COUNT(review_id) as totalCount,
+            (SELECT review_content
+             FROM review
+             WHERE accommodation_id = #{accommodationId}
+             ORDER BY created_at DESC
+             LIMIT 1) as latestContent
+        FROM review
+        WHERE accommodation_id = #{accommodationId}
+        GROUP BY accommodation_id
+    </select>
+
+    <!-- 숙소 ID로 리뷰 조회 -->
+    <select id="selectReviewByAccommodationId" resultType="AccommodationReview">
+        SELECT *
+        FROM review
+        INNER JOIN users ON review.user_id = users.user_id
+        WHERE accommodation_id=#{accommodationId}
+    </select>
+
+    <!-- 유저 ID로 리뷰 조회 -->
+    <select id="selectReviewByUserId" resultType="MyReview">
+        SELECT *
+        FROM review
+        INNER JOIN accommodation ON review.accommodation_id  = accommodation.accommodation_id
+        WHERE review.user_id=#{userId}
+    </select>
+
+    <!-- 리뷰 등록 -->
+    <insert id="insertReview" parameterType="Review" useGeneratedKeys="true" keyProperty="reviewId" keyColumn="review_id">
+        INSERT INTO review (user_id, accommodation_id, rating, review_content)
+        VALUES (#{userId}, #{accommodationId}, #{rating}, #{reviewContent})
+    </insert>
+
+    <!-- 리뷰 삭제 -->
+    <delete id="deleteReview" parameterType="Review">
+        DELETE FROM review
+        WHERE user_id = #{userId}
+        AND review_id = #{reviewId}
+    </delete>
+</mapper>

@@ -36,7 +36,13 @@ public class SearchAccommodationRequest {
     // --- 필터링 파라미터 (추가됨) ---
     private List<String> facilities;      // 편의시설 리스트 (has_parking, has_wifi 등)
     private List<String> types;           // 숙소 종류 리스트 (HOTEL, MOTEL 등)
+    private String accommodationType;     // 단일 숙소 타입 (Elasticsearch용)
     private Integer minPrice;             // 최소 가격
     private Integer maxPrice;             // 최대 가격
+    private Double minRating;             // 최소 평점 (Elasticsearch용)
+
+    // --- 정렬 및 페이징 파라미터 (Elasticsearch용) ---
+    private String sortBy;                // 정렬 옵션 (price_asc, price_desc, rating, review_count)
+    private Integer page;                 // 페이지 번호 (기본값: 1)
 
 }
